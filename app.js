@@ -127,5 +127,44 @@ app.get('/deleteFish/:id', (req, res) => {
     });
 });
 
+
+app.get('/login', (req, res) => {
+    res.render('login', { messages: req.flash('success'), errors: req.flash('error') });
+});
+ 
+ 
+app.post('/login', (req, res) => {
+    const { email, password } = req.body;
+ 
+    if (!email || !password) {
+        req.flash('error', 'All fields are required.');
+        return res.redirect('/login');
+    }
+
+    const sql = 'SELECT * FROM users WHERE email = ?';
+    connection.query(sql, [email], (err, results) => {
+        if (err) {
+            console.error('Database query error:', err);
+            req.flash('error', 'Internal server error');
+            return res.redirect('/login');
+        }
+
+        if (results.length === 0) {
+            req.flash('error', 'Invalid email or password');
+            return res.redirect('/login');
+        }
+
+        const user = results[0];
+        if (user.password !== password) {
+            req.flash('error', 'Invalid email or password');
+            return res.redirect('/login');
+        }
+
+        req.session.userId = user.id;
+        req.flash('success', 'Login successful');
+        res.redirect('/');
+    });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
