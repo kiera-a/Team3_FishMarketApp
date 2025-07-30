@@ -17,49 +17,56 @@
       <div class="collapse navbar-collapse" id="collapsibleNavbar">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link" href="/addFish">Add new fish</a>
+            <a class="nav-link" href="/addFish">Add New Fish</a>
           </li>
         </ul>
       </div>
     </div>
   </nav>
 
-  <div class="container">
-    <br />
-    <div class="text-center">
+  <div class="container mt-4">
+    <div class="text-center mb-4">
       <h2>Fish List</h2>
     </div>
-    <br />
-    <table class="table table-hover text-center">
-      <head>
-        <tr>
-          <th>Fish Name</th>
-          <th>Image</th>
-          <th>Weight (kg)</th>
-          <th>Type</th>
-          <th>Length (cm)</th>
-          <th>Price ($)</th>
-          <th>Diet & Use</th>
-          <th>Edit</th>
-          <th>Delete</th>
-        </tr>
-      </head>
-      <body>
-        <% for(let i = 0; i < fishList.length; i++) { %>
+
+    <% if (fishList.length === 0) { %>
+      <div class="alert alert-warning text-center">No fish found in the database.</div>
+    <% } else { %>
+      <table class="table table-hover text-center table-bordered align-middle">
+        <thead class="table-dark">
           <tr>
-            <td><a href="/fish/<%= fishList[i].fishId %>"><%= fishList[i].name %></a></td>
-            <td><img src="/images/<%= fishList[i].image %>" width="80" /></td>
-            <td><%= fishList[i].weight %></td>
-            <td><%= fishList[i].type %></td>
-            <td><%= fishList[i].length %></td>
-            <td>$<%= fishList[i].price.toFixed(2) %></td>
-            <td><%= fishList[i].diet %></td>
-            <td><a href="/editFish/<%= fishList[i].fishId %>">Edit</a></td>
-            <td><a href="/deleteFish/<%= fishList[i].fishId %>" onclick="return confirm('Are you sure you want to delete this fish?')">Delete</a></td>
+            <th>Fish Name</th>
+            <th>Image</th>
+            <th>Weight (kg)</th>
+            <th>Type</th>
+            <th>Length (cm)</th>
+            <th>Price ($)</th>
+            <th>Diet & Use</th>
+            <th>Edit</th>
+            <th>Delete</th>
           </tr>
-        <% } %>
-      </body>
-    </table>
+        </thead>
+        <tbody>
+          <% fishList.forEach(fish => { %>
+            <tr>
+              <td><a href="/fish/<%= fish.fishId %>"><%= fish.name %></a></td>
+              <td><img src="/images/<%= fish.image %>" alt="Fish Image" style="width: 80px;" class="img-thumbnail" /></td>
+              <td><%= fish.weight %></td>
+              <td><%= fish.type %></td>
+              <td><%= fish.length %></td>
+              <td>$<%= fish.price.toFixed(2) %></td>
+              <td><%= fish.diet_use %></td>
+              <td>
+                <a href="/editFish/<%= fish.fishId %>" class="btn btn-sm btn-warning">Edit</a>
+              </td>
+              <td>
+                <a href="/deleteFish/<%= fish.fishId %>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this fish?')">Delete</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
   </div>
 </body>
 </html>
