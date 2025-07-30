@@ -41,6 +41,12 @@
         <input type="hidden" name="fishId" value="<%= fish.fishId %>">
         <button type="submit" class="btn btn-primary btn-sm mt-2">Add to Cart</button>
       </form>
+
+      <a href="/editFish/<%= fish.id %>" class="btn btn-warning btn-sm mt-2">Edit</a>
+
+      <form action="/deleteFish/<%= fish.id %>" method="POST" style="display:inline;" onsubmit="return confirm('Delete <%= fish.name %>?');">
+        <button type="submit" class="btn btn-danger btn-sm mt-2">Delete</button>
+      </form>
     </li>
   <% }) %>
 </ul>
