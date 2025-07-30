@@ -163,32 +163,26 @@ app.post('/login', (req, res) => {
         req.flash('error', 'All fields are required.');
         return res.redirect('/login');
     }
-
-    const sql = 'SELECT * FROM users WHERE email = ?';
-    connection.query(sql, [email], (err, results) => {
+ 
+    const sql = 'SELECT * FROM users WHERE email = ? AND password = SHA1(?)';
+    connection.query(sql, [email, password], (err, results) => {
         if (err) {
-            console.error('Database query error:', err);
-            req.flash('error', 'Internal server error');
-            return res.redirect('/login');
+            throw err;
         }
-
-        if (results.length === 0) {
-            req.flash('error', 'Invalid email or password');
-            return res.redirect('/login');
+ 
+        if (results.length > 0) {
+            req.session.user = results[0];
+            req.flash('success', 'Login successful!');
+            if (req.session.user.role == 'user')
+                res.redirect('/shop');
+            else
+                res.redirect('/inventory');
+        } else {
+            req.flash('error', 'Invalid email or password.');
+            res.redirect('/login');
         }
-
-        const user = results[0];
-        if (user.password !== password) {
-            req.flash('error', 'Invalid email or password');
-            return res.redirect('/login');
-        }
-
-        req.session.userId = user.id;
-        req.flash('success', 'Login successful');
-        res.redirect('/');
     });
 });
-
 
 app.get('/register', (req, res) => {
     res.render('register', { messages: req.flash('error'), formData: req.flash('formData')[0] });
