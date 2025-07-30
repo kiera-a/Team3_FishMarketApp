@@ -79,14 +79,7 @@ app.use(session({
 
 // Routes
 app.get('/', (req, res) => {
-    const sql = 'SELECT * FROM fishes';
-    connection.query(sql, (error, results) => {
-        if (error) {
-            console.error('Database query error:', error.message);
-            return res.status(500).send('Error retrieving products');
-        }
-        res.render('index', { fishList: results });
-    });
+    res.render('home');
 });
 
 app.get('/addFish', (req, res) => {
@@ -219,6 +212,18 @@ app.post('/register', validateRegistration, (req, res) => {
         res.redirect('/login');
     });
 });
+
+app.get('/shop', (req, res) => {
+    const sql = 'SELECT * FROM fish';
+    connection.query(sql, (err, results) => {
+        if (err) {
+            console.error('Error fetching fish:', err);
+            return res.status(500).send('Internal Server Error');
+        }
+        res.render('shop', { fish: results });
+    });
+});
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
