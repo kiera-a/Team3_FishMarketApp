@@ -111,7 +111,7 @@ app.post('/addFish', upload.single('image'), (req, res) => {
             console.error('Error adding fish:', err);
             return res.status(500).send('Error adding fish');
         }
-        res.redirect('/');
+        res.redirect('/shop');
     });
 });
 
