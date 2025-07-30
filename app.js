@@ -88,7 +88,7 @@ app.get('/addFish', (req, res) => {
 
 app.get('/fish/:id', (req, res) => {
     const fishId = req.params.id;
-    const query = 'SELECT * FROM fishes WHERE fishId = ?';
+    const query = 'SELECT * FROM fish WHERE fishId = ?';
     connection.query(query, [fishId], (err, results) => {
         if (err) {
             console.error('Error fetching fish:', err);
@@ -105,7 +105,7 @@ app.post('/addFish', upload.single('image'), (req, res) => {
     const { name, weight, length, type, price, diet_use } = req.body;
     const image = req.file ? req.file.filename : null;
 
-    const sql = 'INSERT INTO fishes (name, weight, length, type, price, diet_use, image) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO fish (name, weight, length, type, price, diet_use, image) VALUES (?, ?, ?, ?, ?, ?, ?)';
     connection.query(sql, [name, weight, length, type, price, diet_use, image], (err) => {
         if (err) {
             console.error('Error adding fish:', err);
@@ -116,49 +116,33 @@ app.post('/addFish', upload.single('image'), (req, res) => {
 });
 
 app.get('/editFish/:id', (req, res) => {
-    const fishId = req.params.id;
-    const query = 'SELECT * FROM fishes WHERE fishId = ?';
-    connection.query(query, [fishId], (err, results) => {
-        if (err) {
-            console.error('Error fetching fish:', err);
-            return res.status(500).send('Internal Server Error');
-        }
-        if (results.length === 0) {
-            return res.status(404).send('Fish not found');
-        }
-        res.render('editFish', { fish: results[0] });
-    });
+  const fishId = req.params.id;
+  connection.query('SELECT * FROM fish WHERE id = ?', [fishId], (err, results) => {
+    if (err) return res.status(500).send('DB error');
+    if (results.length === 0) return res.status(404).send('Fish not found');
+    res.render('editFish', { fish: results[0] });
+  });
 });
 
 app.post('/editFish/:id', upload.single('image'), (req, res) => {
-    const fishId = req.params.id;
-    const { name, weight, length, type, price, diet_use, currentImage } = req.body;
-    let image = currentImage;
-    
-    if (req.file) {
-        image = req.file.filename;
-    }
+  const fishId = req.params.id;
+  const { name, weight, length, type, price, diet_use, currentImage } = req.body;
+  let image = currentImage;
+  if (req.file) image = req.file.filename;
 
-    const sql = 'UPDATE fishes SET name = ?, weight = ?, length = ?, type = ?, price = ?, diet_use = ?, image = ? WHERE fishId = ?';
-    connection.query(sql, [name, weight, length, type, price, diet_use, image, fishId], (err) => {
-        if (err) {
-            console.error("Error updating fish:", err);
-            return res.status(500).send('Error updating fish');
-        }
-        res.redirect('/');
-    });
+  const sql = 'UPDATE fish SET name=?, weight=?, length=?, type=?, price=?, diet_use=?, image=? WHERE id=?';
+  connection.query(sql, [name, weight, length, type, price, diet_use, image, fishId], (err) => {
+    if (err) return res.status(500).send('Update error');
+    res.redirect('/shop');
+  });
 });
 
-app.get('/deleteFish/:id', (req, res) => {
-    const fishId = req.params.id;
-    const sql = 'DELETE FROM fishes WHERE fishId = ?';
-    connection.query(sql, [fishId], (err) => {
-        if (err) {
-            console.error("Error deleting fish:", err);
-            return res.status(500).send('Error deleting fish');
-        }
-        res.redirect('/');
-    });
+app.post('/deleteFish/:id', (req, res) => {
+  const fishId = req.params.id;
+  connection.query('DELETE FROM fish WHERE id = ?', [fishId], (err) => {
+    if (err) return res.status(500).send('Delete error');
+    res.redirect('/shop');
+  });
 });
 
 
@@ -214,7 +198,7 @@ app.post('/register', validateRegistration, (req, res) => {
 });
 
 app.get('/shop', (req, res) => {
-    const sql = 'SELECT * FROM fish';
+    const sql = 'SELECT * FROM fish'; 
     connection.query(sql, (err, results) => {
         if (err) {
             console.error('Error fetching fish:', err);
@@ -224,6 +208,46 @@ app.get('/shop', (req, res) => {
     });
 });
 
+app.post('/cart/add', (req, res) => {
+    const fishId = req.body.fishId;
+    if (!req.session.cart) {
+        req.session.cart = [];
+    }
+    const existing = req.session.cart.find(item => item.id == fishId);
+    if (existing) {
+        existing.qty += 1;
+    } else {
+        req.session.cart.push({ id: fishId, qty: 1 });
+    }
+    res.redirect('/shop');
+});
+
+app.get('/cart', (req, res) => {
+    if (!req.session.cart || req.session.cart.length === 0) {
+        return res.render('cart', { cartItems: [] });
+    }
+    const ids = req.session.cart.map(item => item.id);
+    const sql = 'SELECT * FROM fish WHERE id IN (?)';
+    connection.query(sql, [ids], (err, results) => {
+        if (err) {
+            console.error('Error fetching cart items:', err);
+            return res.status(500).send('Internal Server Error');
+        }
+        const cartItems = results.map(fish => {
+            const cartItem = req.session.cart.find(item => item.id == fish.id);
+            return { ...fish, qty: cartItem.qty };
+        });
+        res.render('cart', { cartItems });
+    });
+});
+
+app.post('/cart/remove', (req, res) => {
+    const fishId = req.body.fishId;
+    if (req.session.cart) {
+        req.session.cart = req.session.cart.filter(item => item.id != fishId);
+    }
+    res.redirect('/cart');
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
