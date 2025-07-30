@@ -2,6 +2,22 @@ const express = require('express');
 const multer = require('multer');
 const mysql = require('mysql2');
 const app = express();
+const flash = require('connect-flash');
+const session = require('express-session');
+const validateRegistration = (req, res, next) => {
+    const { username, email, password, address, contact, role } = req.body;
+ 
+    if (!username || !email || !password || !address || !contact || !role) {
+        return res.status(400).send('All fields are required.');
+    }
+ 
+    if (password.length < 6) {
+        req.flash('error', 'Password should be at least 6 or more characters long');
+        req.flash('formData', req.body);
+        return res.redirect('/register');
+    }
+    next();
+};
 
 // Multer setup for file uploads
 const storage = multer.diskStorage({
@@ -35,6 +51,13 @@ connection.connect((err) => {
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: false }));
+app.use(flash());
+app.use(session({
+    secret: 'secret',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 }
+}));
 
 // Routes
 app.get('/', (req, res) => {
@@ -163,6 +186,25 @@ app.post('/login', (req, res) => {
         req.session.userId = user.id;
         req.flash('success', 'Login successful');
         res.redirect('/');
+    });
+});
+
+
+app.get('/register', (req, res) => {
+    res.render('register', { messages: req.flash('error'), formData: req.flash('formData')[0] });
+});
+ 
+app.post('/register', validateRegistration, (req, res) => {
+    const { username, email, password, address, contact, role } = req.body;
+ 
+    const sql = 'INSERT INTO users (username, email, password, address, contact, role) VALUES (?, ?, SHA1(?), ?, ?, ?)';
+    connection.query(sql, [username, email, password, address, contact, role], (err, result) => {
+        if (err) {
+            throw err;
+        }
+        console.log(result);
+        req.flash('success', 'Registration successful! Please log in.');
+        res.redirect('/login');
     });
 });
 
