@@ -16,11 +16,11 @@ const upload = multer({ storage: storage });
 
 // MySQL connection
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
+    host: 'c237-all.mysql.database.azure.com',
+    user: 'c237admin',
     port: 3306,
-    password: 'Republic_C207',
-    database: 'c237_fishmarket'
+    password: 'c2372025!',
+    database: 'c237_027_team3'
 });
 
 connection.connect((err) => {
