@@ -214,7 +214,7 @@ app.post('/register', validateRegistration, (req, res) => {
 });
 
 app.get('/shop', (req, res) => {
-    const sql = 'SELECT * FROM fish';
+    const sql = 'SELECT * FROM fish'; 
     connection.query(sql, (err, results) => {
         if (err) {
             console.error('Error fetching fish:', err);
@@ -224,6 +224,58 @@ app.get('/shop', (req, res) => {
     });
 });
 
+
+app.get('/shop', (req, res) => {
+    const sql = 'SELECT * FROM fish'; 
+    connection.query(sql, (err, results) => {
+        if (err) {
+            console.error('Error fetching fish:', err);
+            return res.status(500).send('Internal Server Error');
+        }
+        res.render('shop', { fish: results });
+    });
+});
+
+app.post('/cart/add', (req, res) => {
+    const fishId = req.body.fishId;
+    if (!req.session.cart) {
+        req.session.cart = [];
+    }
+    const existing = req.session.cart.find(item => item.id == fishId);
+    if (existing) {
+        existing.qty += 1;
+    } else {
+        req.session.cart.push({ id: fishId, qty: 1 });
+    }
+    res.redirect('/shop');
+});
+
+app.get('/cart', (req, res) => {
+    if (!req.session.cart || req.session.cart.length === 0) {
+        return res.render('cart', { cartItems: [] });
+    }
+    const ids = req.session.cart.map(item => item.id);
+    const sql = 'SELECT * FROM fish WHERE id IN (?)';
+    connection.query(sql, [ids], (err, results) => {
+        if (err) {
+            console.error('Error fetching cart items:', err);
+            return res.status(500).send('Internal Server Error');
+        }
+        const cartItems = results.map(fish => {
+            const cartItem = req.session.cart.find(item => item.id == fish.id);
+            return { ...fish, qty: cartItem.qty };
+        });
+        res.render('cart', { cartItems });
+    });
+});
+
+app.post('/cart/remove', (req, res) => {
+    const fishId = req.body.fishId;
+    if (req.session.cart) {
+        req.session.cart = req.session.cart.filter(item => item.id != fishId);
+    }
+    res.redirect('/cart');
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
